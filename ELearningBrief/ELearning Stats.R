@@ -6,16 +6,16 @@ library("sf")
 
 fp = "/Users/mercedeswentworth-nice/Documents/Employment/Advance Illinois/ELearningBrief/"
 
-ddi <- read_ipums_ddi(paste0(fp, "data/usa_00003.xml"))
+ddi  <- read_ipums_ddi(paste0(fp, "data/usa_00003.xml"))
 ogdf <- read_ipums_micro(ddi)
 
 # using PUMA since county level data is not available
 p2c <- read_csv(paste0(fp, "data/puma2countyIL.csv")) %>%
-  mutate(PUMA = as.numeric(puma12))
+  mutate(PUMA = as.character(puma12))
 
 # For use in mapping the data
 puma_geom <- read_sf(paste0(fp, "data/ipums_puma_2010/ipums_puma_2010.shp")) %>%
-  mutate(PUMA = as.numeric(PUMA)) %>%
+  mutate(PUMA = as.character(PUMA)) %>%
   filter(STATEFIP == "17")
 
 # initial filters
@@ -61,24 +61,27 @@ df <- df %>%
          dinternet = na_if(dinternet, -9999),
          dhispeed  = na_if(dhispeed, -9999))
 
-# all of IL -- used this to test different filters to see if I could replicate the
+# all of IL -- used these lines to test different filters to see if I could replicate the
 # edweek calculator
 df %>%
   distinct(HHWT, .keep_all = TRUE) %>%
-  summarise(internet = sum(dinternet)/sum(PERWT), 
-            hispeed  = sum(dhispeed)/sum(PERWT),
-            device   = sum(ddevice)/sum(PERWT)
+  summarise(internet = sum(dinternet, na.rm= TRUE)/sum(PERWT, na.rm= TRUE), 
+            hispeed  = sum(dhispeed, na.rm= TRUE)/sum(PERWT, na.rm= TRUE),
+            device   = sum(ddevice, na.rm= TRUE)/sum(PERWT, na.rm= TRUE),
+            computer = sum(dcomputer, na.rm= TRUE)/sum(PERWT, na.rm= TRUE)
   )
 
 # summarize by PUMA and add geometry
 pumas <- df %>%
   group_by(PUMA) %>%
-  summarise(internet = sum(dinternet)/sum(PERWT), 
-            hispeed  = sum(dhispeed)/sum(PERWT),
-            device   = sum(ddevice)/sum(PERWT),
+  summarise(internet = sum(dinternet, na.rm= TRUE)/sum(PERWT, na.rm= TRUE), 
+            hispeed  = sum(dhispeed, na.rm= TRUE)/sum(PERWT, na.rm= TRUE),
+            device   = sum(ddevice, na.rm= TRUE)/sum(PERWT, na.rm= TRUE),
+            computer = sum(dcomputer, na.rm= TRUE)/sum(PERWT, na.rm= TRUE)
             ) %>%
   left_join(p2c, by="PUMA") %>%
   left_join(puma_geom, by = "PUMA")
 
 readr::write_csv(pumas, paste0(fp, "out/digital_access_by_PUMA.csv"))
 st_write(pumas, paste0(fp, "out/digital_access_by_PUMA.shp"), delete_dsn = TRUE)
+st_write(pumas, "/Users/mercedeswentworth-nice/Documents/Employment/Advance Illinois/digital_access_by_PUMA.shp", delete_dsn = TRUE)
