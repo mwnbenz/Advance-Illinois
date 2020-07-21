@@ -27,6 +27,23 @@ epps_by_subject <- read_excel("Illinois.xls", sheet = 6) %>%
 
 names(epps_by_subject) <- gsub("Teacher Education - ", "", names(epps_by_subject))
 
+epps_by_subject <- epps_by_subject %>%
+  mutate(science = coalesce(Physics, `Earth Science`, Psychology, Geography, 
+                            `Science Teacher Education/General Science`, Biology),
+         foreign_language = coalesce(Latin, German, French, Spanish),
+         elementary = `Elementary Education`,
+         middle = `Junior High/Intermediate/Middle School Education`,
+         secondary = `Secondary Education`,
+         arts = Art,
+         lang_arts = `English/Language Arts`,
+         reading = Reading,
+         music = Music,
+         social_studies = coalesce(`Social Science`, `Social Studies`, `History`),
+         technology_cs = coalesce(`Technology Teacher Education/Industrial Arts`),
+         family_consumer_science = `Family and Consumer Sciences/Home Economics`
+         pe = `Physical Education and Coaching`
+         )
+
 df <- epps %>%
   mutate(ProgramCode = as.numeric(ProgramCode)) %>%
   left_join(ipeds_epp_crosswalk %>%
